@@ -17,7 +17,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(TELEMETRY_BUILD_EXAMPLES "Build the example applications" ON)
-option(TELEMETRY_BUILD_TESTS "Build the test suites" OFF)
+option(TELEMETRY_BUILD_TESTS "Build the test suites" ON)
 
 # 4. Add the libraries/modules
 add_subdirectory(core)
