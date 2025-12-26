@@ -77,7 +77,7 @@ bool ring_buffer_init(ring_buffer_t* rb, size_t capacity)
 
     return true;
 }
-}
+
 
 /**
  * @brief Frees the ring buffer.
