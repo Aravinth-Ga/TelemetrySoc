@@ -27,7 +27,7 @@ typedef struct ring_buffer_s{
 
 // global ring buffer functions
 bool ring_buffer_init(ring_buffer_t* rb, size_t capacity);
-bool ring_buffer_free(ring_buffer_t* rb);
+void ring_buffer_free(ring_buffer_t* rb);
 
 // Producer thread : push the event to the ring buffer
 bool ring_buffer_push(ring_buffer_t* rb, telemetry_event_t* event);
@@ -37,8 +37,8 @@ bool ring_buffer_pop(ring_buffer_t* rb, telemetry_event_t* out);
 
 
 // Helper functions
-bool ring_buffer_count(ring_buffer_t* rb);
-bool ring_buffer_dropped(ring_buffer_t* rb);
+size_t ring_buffer_count(const ring_buffer_t* rb);
+uint64_t ring_buffer_dropped(const ring_buffer_t* rb);
 
 
 
