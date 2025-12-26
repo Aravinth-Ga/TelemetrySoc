@@ -12,10 +12,12 @@
 #include <string.h>
 #include <assert.h>
 
+
 // Local function prototype declarations
 static void test_payload_copy(void);
 static void test_monotonic_timestamp(void);
 static void test_oversized_payload(void);
+void test_event(void);
 
 // Test main function
 /**
@@ -25,13 +27,11 @@ static void test_oversized_payload(void);
  *
  * @return 0 on success.
  */
-int main()
+void test_event()
 {
     test_payload_copy();
     test_monotonic_timestamp();
     test_oversized_payload();
-
-    return 0;
 }
 
 /**
@@ -62,7 +62,7 @@ static void test_payload_copy()
     memcmp(event.payload, message, sizeof(message));
 
     // If everything is okay, then test is passed
-    printf(" Telemetry :: test_payload_copy is passed. \n");
+    printf("Telemetry :: Test case test_payload_copy is passed. \n");
 
 }
 
@@ -86,7 +86,7 @@ static void test_monotonic_timestamp()
     // Monotonic timestamp should not be backward compatible (i.e., increasing)
     assert(ev1.timestamp <= ev2.timestamp);
 
-    printf("Telemetry :: test_monotonic_timestamp is passed. \n");
+    printf("Telemetry :: Test case test_monotonic_timestamp is passed. \n");
 }
 
 /**
@@ -110,5 +110,5 @@ static void test_oversized_payload()
 
     assert(!ok);
 
-    printf("Telemetry :: test_oversized_payload is passed. \n");
+    printf("Telemetry :: Test case test_oversized_payload is passed. \n");
 }
