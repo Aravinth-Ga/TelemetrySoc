@@ -31,6 +31,7 @@ target_link_libraries(telemetry_framework INTERFACE
     telemetry_core
     telemetry_api
     telemetry_os_linux
+    telemetry_os_inlcude
     telemetry_transport)
 
 if(TELEMETRY_BUILD_EXAMPLES)

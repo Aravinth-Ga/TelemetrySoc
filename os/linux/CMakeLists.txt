@@ -1,4 +1,4 @@
-# Add telemetry_core library
+# Add telemetry_os_linux library
 add_library(telemetry_os_linux
     osal_thread_linux.c
     osal_time_linux.c
