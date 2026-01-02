@@ -22,7 +22,7 @@ namespace transport {
         public:
             // Constructor: optionally enable printing of sent events
             explicit MockTrasnport(bool enable_print = true) :
-                enable_print_(enable_print){}
+                enable_print_{enable_print}{}
 
             // Initialize the mock transport with configuration
             bool Init(const Config&) override
