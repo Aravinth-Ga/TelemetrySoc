@@ -9,13 +9,10 @@
 
 
 #include "event.h"
+#include "osal_time.h"
 #include <stdbool.h>
 #include <string.h>
 #include <time.h>
-
-
-// Local function prototype declaration
-static uint64_t telemetry_now_monotonic_ns(void);
 
 
 // Function definitions
@@ -57,7 +54,7 @@ bool telemetry_event_make(telemetry_event_t * event,
     event->payload_size = (uint16_t) payload_size;
 
     // Set the timestamp
-    event->timestamp = telemetry_now_monotonic_ns();
+    event->timestamp = osal_telemetry_now_monotonic_ns();
 
     // Copy the payload to the struct
     if(payload_size > 0)
@@ -74,24 +71,4 @@ bool telemetry_event_make(telemetry_event_t * event,
     }
 
     return true;
-}
-
-/**
- * @brief Returns the current monotonic time in nanoseconds.
- *
- * Uses the monotonic clock, which is not affected by system time changes.
- * The value represents nanoseconds since an unspecified starting point.
- *
- * @return Monotonic time in nanoseconds.
- */
-static uint64_t telemetry_now_monotonic_ns(void)
-{
-    struct timespec ts;
-
-    // Get the monotonic time in nanoseconds. This provides full seconds value and nanosecond precision.
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-
-    // Convert seconds to nanoseconds, then add the nanosecond fraction to the final value.
-    return ((uint64_t) ts.tv_sec * 1000000000ull) + ((uint64_t)ts.tv_nsec);
-
 }
