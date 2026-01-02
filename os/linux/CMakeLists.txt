@@ -1,17 +1,18 @@
-# Add telemetry_os_linux library
+# Add telemetry_core library
 add_library(telemetry_os_linux
-    thread.cpp
-    timer.cpp
+    osal_thread_linux.c
+    osal_time_linux.c
+    osal_wakeup_linux.c
 )
 
 # Include directories
-target_include_directories(telemetry_os_linux
+target_include_directories(telemetry_os_linux 
     PUBLIC
-        ${CMAKE_CURRENT_LIST_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Compiler Warnings configuration
-add_compile_options(telemetry_os_linux
+target_compile_options(telemetry_os_linux 
     PRIVATE
         -Wall
         -Wextra
