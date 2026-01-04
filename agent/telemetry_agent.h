@@ -11,15 +11,14 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include "../api/type.h"
+#include "../core/ring_buffer.h"
+#include "../os/include/osal_wakeup.h"
+#include "../os/include/osal_thread.h"
 
 #ifdef __cplusplus
     extern "C" {
 #endif
-
-
-// Forward declarations to avoid including heavy headers
-typedef struct oasl_wakeup osal_wakeup_t;
-typedef struct osal_thread osal_thrad_t;
 
 // Structure for transport interface (can wrap C++ or C objects)
 typedef struct transport_c {

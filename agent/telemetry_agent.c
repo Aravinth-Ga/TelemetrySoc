@@ -9,10 +9,9 @@
  */
 
 #include "telemetry_agent.h"
-#include "osal_wakeup.h"
-#include "osal_thread.h"
-#include "ring_buffer.h"
-#include "transport.hpp"
+#include "../os/include/osal_wakeup.h"
+#include "../os/include/osal_thread.h"
+#include "../core/ring_buffer.h"
 
 #include <stdatomic.h>
 
@@ -22,7 +21,7 @@
 // Internal structure for the telemetry agent
 struct telemetry_agent
 {
-    osal_thrad_t* consumer_thread;  // The background thread that does the work
+    osal_thread_t* consumer_thread;  // The background thread that does the work
     osal_wakeup_t* wakeup;          // Used to wake up the thread when new events arrive
 
     atomic_bool stop_requested;     // Flag to tell the thread to stop
@@ -60,7 +59,7 @@ static void* drain_ring_send_event(telemetry_agent_t* agent)
         if(ring_buffer_pop(agent->ring_buff_handle, &event))
         {
             // Buffer is empty, so we're done
-            return;
+            return NULL;
         }
 
         // Send the event using the transport
@@ -79,7 +78,7 @@ static void* drain_ring_send_event(telemetry_agent_t* agent)
             if(drained >= TELEMETRY_AGENT_MAX_DRAIN_PER_WAKEUP)
             {
                 // We've hit the limit, stop for now
-                return;
+                return NULL;
             }
         }
     }
@@ -165,7 +164,7 @@ bool telemetry_agent_start(telemetry_agent_t** out_agent, ring_buffer_t* ring_ha
     // Start the background thread
     const int rc = osal_thread_create(&agent->consumer_thread, consumer_thread_main, agent, "telemetry_agent");
 
-    if(rc == NULL || agent->consumer_thread == NULL)
+    if(rc != 0 || agent->consumer_thread == NULL)
     {
         // Clean up if thread creation failed
         osal_wakeup_destroy(agent->wakeup);

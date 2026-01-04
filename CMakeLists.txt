@@ -20,6 +20,7 @@ option(TELEMETRY_BUILD_EXAMPLES "Build the example applications" ON)
 option(TELEMETRY_BUILD_TESTS "Build the test suites" ON)
 
 # 4. Add the libraries/modules
+add_subdirectory(os/include)
 add_subdirectory(core)
 add_subdirectory(api)
 add_subdirectory(os/linux)

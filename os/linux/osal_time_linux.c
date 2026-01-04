@@ -11,7 +11,7 @@
  *
  * @return Monotonic time in nanoseconds.
  */
-static uint64_t osal_telemetry_now_monotonic_ns(void)
+uint64_t osal_telemetry_now_monotonic_ns(void)
 {
     struct timespec ts;
 

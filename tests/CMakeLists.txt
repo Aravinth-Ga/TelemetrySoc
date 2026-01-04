@@ -12,4 +12,5 @@ target_include_directories(test_telemetry_framework
 target_link_libraries(test_telemetry_framework 
     PRIVATE 
         telemetry_core
+        telemetry_os_linux
 )
