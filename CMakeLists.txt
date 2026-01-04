@@ -24,6 +24,7 @@ add_subdirectory(core)
 add_subdirectory(api)
 add_subdirectory(os/linux)
 add_subdirectory(transport)
+add_subdirectory(agent)
 
 # 5. Create the main telemetry framework interface library
 add_library(telemetry_framework INTERFACE)
@@ -32,6 +33,7 @@ target_link_libraries(telemetry_framework INTERFACE
     telemetry_api
     telemetry_os_linux
     telemetry_os_inlcude
+    telemetry_agent
     telemetry_transport)
 
 if(TELEMETRY_BUILD_EXAMPLES)
