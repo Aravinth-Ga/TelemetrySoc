@@ -7,6 +7,8 @@
  * @author Aravinthraj Ganesan
  */
 
+#define _GNU_SOURCE
+
 
 #include "osal_thread.h"
 

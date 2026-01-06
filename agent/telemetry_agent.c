@@ -36,48 +36,48 @@ struct telemetry_agent
 /**
  * @brief Takes events from the ring buffer and sends them.
  *
- * This function keeps pulling events from the buffer and sending them until the buffer is empty.
+ * Pulls events from the buffer and sends them until empty.
  *
  * @param agent The agent doing the work.
  * @return Always NULL.
  */
 static void* drain_ring_send_event(telemetry_agent_t* agent)
 {
-    // Make sure we have everything we need
+    // Check inputs
     if(agent == NULL || agent->ring_buff_handle == NULL || agent->transport->send_event == NULL)
     {
         return NULL;
     }
 
-    uint32_t drained = 0;  // Count how many we've processed this time
+    uint32_t drained = 0;  // Count processed events
 
     while(1)
     {
-        telemetry_event_t event;  // Space to store the event we pull out
+        telemetry_event_t event;  // Space for event
 
-        // Try to get an event from the buffer (doesn't wait if empty)
+        // Get event from buffer (no wait if empty)
         if(ring_buffer_pop(agent->ring_buff_handle, &event))
         {
-            // Buffer is empty, so we're done
+            // Buffer empty, done
             return NULL;
         }
 
-        // Send the event using the transport
+        // Send event
         const bool ok = agent->transport->send_event(agent->transport->ctx, &event);
 
-        if(ok != 0x00)  // If sending worked
+        if(ok)  // If send succeeded
         {
-            // Count this as a successful send
-            atomic_fetch_add_explicit(&agent->sent_count, 0x01, memory_order_relaxed);
+            // Increment sent count
+            atomic_fetch_add_explicit(&agent->sent_count, 1, memory_order_relaxed);
         }
 
-        // If there's a limit on how many to process per wakeup, check it
+        // Check drain limit
         if(TELEMETRY_AGENT_MAX_DRAIN_PER_WAKEUP != 0)
         {
             drained++;
             if(drained >= TELEMETRY_AGENT_MAX_DRAIN_PER_WAKEUP)
             {
-                // We've hit the limit, stop for now
+                // Hit limit, stop
                 return NULL;
             }
         }
@@ -87,7 +87,7 @@ static void* drain_ring_send_event(telemetry_agent_t* agent)
 /**
  * @brief The main loop for the background thread.
  *
- * This thread waits to be woken up, then processes any events in the buffer.
+ * Waits for wakeup, then processes events.
  *
  * @param arg Pointer to the agent.
  * @return Always NULL.
@@ -101,16 +101,16 @@ static void* consumer_thread_main(void* arg)
 
     while(1)
     {
-        // Wait here until someone wakes us up
+        // Wait for wakeup
         osal_wakeup_wait(agent->wakeup);
 
-        // Process all the events we can
+        // Process events
         drain_ring_send_event(agent);
 
-        // Check if we should stop
+        // Check stop flag
         if(atomic_load_explicit(&agent->stop_requested, memory_order_acquire) == true)
         {
-            // Do one final process before quitting
+            // Final process before exit
             drain_ring_send_event(agent);
             break;
         }
@@ -122,12 +122,12 @@ static void* consumer_thread_main(void* arg)
 /**
  * @brief Starts the telemetry agent.
  *
- * Sets up everything needed: allocates memory, creates the thread, etc.
+ * Creates agent, thread, and wakeup mechanism.
  *
- * @param out_agent Where to put the pointer to the new agent.
- * @param ring_handle The buffer to read events from.
- * @param transport How to send the events.
- * @return true if everything worked, false if not.
+ * @param out_agent Where to store the agent pointer.
+ * @param ring_handle The buffer to read from.
+ * @param transport How to send events.
+ * @return true on success, false on failure.
  */
 bool telemetry_agent_start(telemetry_agent_t** out_agent, ring_buffer_t* ring_handle, transport_c_t* transport)
 {
@@ -137,22 +137,22 @@ bool telemetry_agent_start(telemetry_agent_t** out_agent, ring_buffer_t* ring_ha
         return false;
     }
 
-    // Make space for the agent
+    // Allocate agent
     telemetry_agent_t* agent = (telemetry_agent_t*)calloc(1, sizeof(*agent));
 
     if(agent == NULL)
         return false;
 
-    // Store the handles we were given
+    // Set handles
     agent->ring_buff_handle = ring_handle;
     agent->transport = transport;
 
-    // Start with clean counters and flags
+    // Init atomics
     atomic_init(&agent->stop_requested, false);
-    atomic_init(&agent->sent_count, 0x00);
-    atomic_init(&agent->wakeup_count, 0x00);
+    atomic_init(&agent->sent_count, 0);
+    atomic_init(&agent->wakeup_count, 0);
 
-    // Create the wakeup mechanism
+    // Create wakeup
     agent->wakeup = osal_wakeup_create();
 
     if(agent->wakeup == NULL)
@@ -161,19 +161,106 @@ bool telemetry_agent_start(telemetry_agent_t** out_agent, ring_buffer_t* ring_ha
         return false;
     }
 
-    // Start the background thread
+    // Create thread
     const int rc = osal_thread_create(&agent->consumer_thread, consumer_thread_main, agent, "telemetry_agent");
 
     if(rc != 0 || agent->consumer_thread == NULL)
     {
-        // Clean up if thread creation failed
+        // Cleanup on failure
         osal_wakeup_destroy(agent->wakeup);
         free(agent);
         return false;
     }
 
-    // Give the agent back to the caller
+    // Return agent
     *out_agent = agent;
 
     return true;
+}
+/**
+ * @brief Notifies the telemetry agent.
+ *
+ * Wakes up the agent to process events.
+ *
+ * @param agent The agent to notify.
+ */
+void telemetry_agent_notify(telemetry_agent_t* agent)
+{
+    // Check input
+    if(agent == NULL)
+    {
+        return;
+    }
+
+    // Increment wakeup count
+    atomic_fetch_add_explicit(&agent->wakeup_count, 1, memory_order_relaxed);
+
+    // Wake the thread
+    osal_wakeup_notify(agent->wakeup);
+}
+
+/**
+ * @brief Stops the telemetry agent.
+ *
+ * Signals stop, joins thread, and cleans up.
+ *
+ * @param agent The agent to stop.
+ */
+void telemetry_agent_stop(telemetry_agent_t* agent)
+{
+    // Check input
+    if(agent == NULL)
+        return;
+
+    // Set stop flag
+    atomic_store_explicit(&agent->stop_requested, true, memory_order_relaxed);
+
+    // Wake thread to exit
+    osal_wakeup_notify(agent->wakeup);
+
+    // Join thread
+    osal_thread_join(agent->consumer_thread);
+    // Destroy thread
+    osal_thread_destroy(agent->consumer_thread);
+    agent->consumer_thread = NULL;
+
+    // Destroy wakeup
+    osal_wakeup_destroy(agent->wakeup);
+    agent->wakeup = NULL;
+
+    // Shutdown transport
+    if(agent->transport->shutdown)
+    {
+        agent->transport->shutdown(agent->transport->ctx);
+    }
+
+    free(agent);
+}
+
+/**
+ * @brief Gets the sent event count.
+ *
+ * @param agent The agent.
+ * @return Number of events sent.
+ */
+uint64_t telemetry_agent_sent_count(const telemetry_agent_t* agent)
+{
+    if(agent == NULL)
+        return 0;
+    
+    return atomic_load_explicit(&agent->sent_count, memory_order_relaxed);
+}
+
+/**
+ * @brief Gets the wakeup count.
+ *
+ * @param agent The agent.
+ * @return Number of wakeups.
+ */
+uint64_t telemetry_agent_wakeup_count(const telemetry_agent_t* agent)
+{
+    if(agent == NULL)
+        return 0;
+
+    return atomic_load_explicit(&agent->wakeup_count, memory_order_relaxed);
 }
