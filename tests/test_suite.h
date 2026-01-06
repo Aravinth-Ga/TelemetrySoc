@@ -1,4 +1,3 @@
-
 /**
  * @file test_suite.h
  * @brief Header file for test suite declarations.
@@ -7,6 +6,9 @@
  * used in the telemetry test suite.
  * @author Aravinthraj Ganesan
  */
+
+#pragma once
+
 
 extern void test_ring_buffer(void);
 extern void test_event(void);

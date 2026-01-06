@@ -12,16 +12,17 @@
 
 #include "transport.hpp"
 #include <atomic>
+#include <cstdio>
 
 
 namespace transport {
 
     // Mock implementation of the transport interface for testing purposes
-    class MockTrasnport final : public ITransport
+    class MockTransport final : public ITransport
     {
         public:
             // Constructor: optionally enable printing of sent events
-            explicit MockTrasnport(bool enable_print = true) :
+            explicit MockTransport(bool enable_print = true) :
                 enable_print_{enable_print}{}
 
             // Initialize the mock transport with configuration

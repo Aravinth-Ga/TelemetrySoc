@@ -9,7 +9,22 @@
 
 
 #include "ring_buffer.h"
+#include <stdatomic.h>
 
+
+// Struct declaration
+
+typedef struct ring_buffer_s{
+    telemetry_event_t* buffer;
+
+    size_t capacity;
+    size_t allocation;
+
+    atomic_size_t head;
+    atomic_size_t tail;
+
+    atomic_uint_fast64_t dropped;
+};
 
 // Local function definitions
 
@@ -22,6 +37,7 @@
  * @param index Current index.
  * @return Next index.
  */
+
 static inline size_t next_index(ring_buffer_t* rb, size_t index)
 {
     index++;
@@ -46,16 +62,23 @@ static inline size_t next_index(ring_buffer_t* rb, size_t index)
  * @param capacity Buffer capacity.
  * @return true on success, false on failure.
  */
-bool ring_buffer_init(ring_buffer_t* rb, size_t capacity)
+bool ring_buffer_init(ring_buffer_t** out_rb, size_t capacity)
 {
-    // Check the ringbuffer struct is NULL and capacity not equal to 0
-    if(rb == NULL || capacity == 0x00)
+    // Check the out_rb is not NULL and capacity not equal to 0
+    if(out_rb == NULL || capacity == 0)
+    {
+        return false;
+    }
+
+    ring_buffer_t* rb = (ring_buffer_t*)calloc(1,sizeof(*rb));
+
+    if(rb == NULL)
     {
         return false;
     }
 
     rb->capacity = capacity;            // No.of slots used
-    rb->allocation = capacity +1 ;      // No.of slots + 1 to distinguish between the Empty and Full
+    rb->allocation = capacity + 1;      // No.of slots + 1 to distinguish between the Empty and Full
 
     // Allocate the buffer based on the capacity
     rb->buffer = (telemetry_event_t*)calloc(rb->allocation, sizeof(telemetry_event_t));
@@ -64,16 +87,18 @@ bool ring_buffer_init(ring_buffer_t* rb, size_t capacity)
     if(rb->buffer == NULL)
     {
         // if the memory allocation fails, reset the capacity and allocation on the ring buffer
-        rb->capacity = 0x00;
-        rb->allocation = 0x00;
-
+        rb->capacity = 0;
+        rb->allocation = 0;
+        free(rb);
         return false;
     }
 
-    // Initalize the atomic variables t 0
-    atomic_store_explicit(&rb->head, 0x00, memory_order_relaxed);
-    atomic_store_explicit(&rb->tail, 0x00, memory_order_relaxed);
-    atomic_store_explicit(&rb->dropped, 0x00, memory_order_relaxed);
+    // Initialize the atomic variables to 0
+    atomic_store_explicit(&rb->head, 0, memory_order_relaxed);
+    atomic_store_explicit(&rb->tail, 0, memory_order_relaxed);
+    atomic_store_explicit(&rb->dropped, 0, memory_order_relaxed);
+
+    *out_rb = rb;
 
     return true;
 }

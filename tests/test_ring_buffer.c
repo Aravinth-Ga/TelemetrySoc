@@ -52,18 +52,18 @@ void test_ring_buffer()
  */
 static void testcase_empty_pop()
 {
-    ring_buffer_t rb;
+    ring_buffer_t* rb;
     telemetry_event_t out;
 
     // initialize the ring buffer
     ring_buffer_init(&rb, 4);
 
     // pop the empty ring buffer
-    assert(ring_buffer_pop(&rb, &out) == false);
-    assert(ring_buffer_count(&rb) == 0x00);
+    assert(ring_buffer_pop(rb, &out) == false);
+    assert(ring_buffer_count(rb) == 0x00);
 
     // Free the ring buffer
-    ring_buffer_free(&rb);
+    ring_buffer_free(rb);
 
     printf("Telemetry :: Test case Empty POP is passed. \n");
 
@@ -77,7 +77,7 @@ static void testcase_empty_pop()
  */
 static void testcase_single_push_pop()
 {
-    ring_buffer_t rb;
+    ring_buffer_t* rb;
     telemetry_event_t event, out;
     char message[] = "test_push_pop";
 
@@ -88,12 +88,12 @@ static void testcase_single_push_pop()
     telemetry_event_make(&event, 1, message, sizeof(message), TELEMETRY_LEVEL_INFO);
     
     // Once the event is pushed in to the ring buffer the rb count must be incremented as 1
-    assert(ring_buffer_push(&rb, &event) == true);
-    assert(ring_buffer_count(&rb) == 0x01);
+    assert(ring_buffer_push(rb, &event) == true);
+    assert(ring_buffer_count(rb) == 0x01);
 
     // Once the event is pop from the ring buffer the rb count must be decremented by 1
-    assert(ring_buffer_pop(&rb, &out) == true);
-    assert(ring_buffer_count(&rb) == 0x00);
+    assert(ring_buffer_pop(rb, &out) == true);
+    assert(ring_buffer_count(rb) == 0x00);
 
     // Now validate the out values same as event
     assert(out.event_id == event.event_id);
@@ -106,7 +106,7 @@ static void testcase_single_push_pop()
     assert(memcmp(out.payload, event.payload, out.payload_size) == 0);
 
     // If everthing okay, free the ring buffer
-    ring_buffer_free(&rb);
+    ring_buffer_free(rb);
 
     printf("Telemetry :: Test case single push pop is passed. \n");
 
@@ -120,7 +120,7 @@ static void testcase_single_push_pop()
  */
 static void testcase_fifo_check()
 {
-    ring_buffer_t rb;
+    ring_buffer_t* rb;
     telemetry_event_t event, out;
     char message[] = "fifo_check";
 
@@ -131,24 +131,24 @@ static void testcase_fifo_check()
     {
         telemetry_event_make(&event, index, message, sizeof(message), TELEMETRY_LEVEL_INFO);
         // validate the push event
-        assert(ring_buffer_push(&rb, &event) == true);
+        assert(ring_buffer_push(rb, &event) == true);
         // validate the ring buffer count increment on push event
-        assert(ring_buffer_count(&rb) == index + 1);    
+        assert(ring_buffer_count(rb) == index + 1);    
     }
     
     for(uint8_t index = 0; index < 5; index++)
     {
         // pop the event
-        assert(ring_buffer_pop(&rb, &out) == true);
+        assert(ring_buffer_pop(rb, &out) == true);
         // validate the pop event in the FIFO order
         assert(out.event_id == index);
     }
 
     // validate the ring buffer count is 0, after all the elements are popped out
-    assert(ring_buffer_count(&rb) == 0x00);
+    assert(ring_buffer_count(rb) == 0x00);
 
     // free the ring buffer once all are okay
-    ring_buffer_free(&rb);
+    ring_buffer_free(rb);
 
     printf("Telemetry :: Test case fifo order, count consistency check is passed. \n");
 
@@ -162,7 +162,7 @@ static void testcase_fifo_check()
  */
 static void testcase_wraparound_check()
 {
-    ring_buffer_t rb;
+    ring_buffer_t* rb;
     telemetry_event_t out;
     telemetry_event_t ev0, ev1, ev2, ev3, ev4, ev5;
     char message[] = "wrap_around";
@@ -176,34 +176,34 @@ static void testcase_wraparound_check()
     telemetry_event_make(&ev2, 3, message, sizeof(message), TELEMETRY_LEVEL_INFO);
 
     // push the event also 3 times
-    assert(ring_buffer_push(&rb,&ev0) == true);
-    assert(ring_buffer_push(&rb,&ev1) == true);
-    assert(ring_buffer_push(&rb,&ev2) == true);
-    assert(ring_buffer_count(&rb) == 0x03);
+    assert(ring_buffer_push(rb,&ev0) == true);
+    assert(ring_buffer_push(rb,&ev1) == true);
+    assert(ring_buffer_push(rb,&ev2) == true);
+    assert(ring_buffer_count(rb) == 0x03);
 
     // pop the event 1 time
-    assert(ring_buffer_pop(&rb, &out) == true);
-    assert(ring_buffer_count(&rb) == 0x02);
+    assert(ring_buffer_pop(rb, &out) == true);
+    assert(ring_buffer_count(rb) == 0x02);
 
     // make another 2 more event and push it, it must wrap around
     telemetry_event_make(&ev3, 4, message, sizeof(message), TELEMETRY_LEVEL_INFO);
     telemetry_event_make(&ev4, 5, message, sizeof(message), TELEMETRY_LEVEL_INFO);
-    assert(ring_buffer_push(&rb, &ev3) == true);
-    assert(ring_buffer_push(&rb, &ev4) == true);
+    assert(ring_buffer_push(rb, &ev3) == true);
+    assert(ring_buffer_push(rb, &ev4) == true);
     
     // validate when the buffer is full the event is dropped out as well 
     telemetry_event_make(&ev5, 6, message, sizeof(message), TELEMETRY_LEVEL_INFO);      
-    assert(ring_buffer_push(&rb, &ev5) == false); 
-    assert(ring_buffer_count(&rb) == 0x04);
-    assert(ring_buffer_dropped(&rb) == 0x01);
+    assert(ring_buffer_push(rb, &ev5) == false); 
+    assert(ring_buffer_count(rb) == 0x04);
+    assert(ring_buffer_dropped(rb) == 0x01);
 
-    assert(ring_buffer_pop(&rb, &out) == true);assert(out.event_id == 2);
-    assert(ring_buffer_pop(&rb, &out) == true);assert(out.event_id == 3);
-    assert(ring_buffer_pop(&rb, &out) == true);assert(out.event_id == 4);
-    assert(ring_buffer_pop(&rb, &out) == true);assert(out.event_id == 5);
+    assert(ring_buffer_pop(rb, &out) == true);assert(out.event_id == 2);
+    assert(ring_buffer_pop(rb, &out) == true);assert(out.event_id == 3);
+    assert(ring_buffer_pop(rb, &out) == true);assert(out.event_id == 4);
+    assert(ring_buffer_pop(rb, &out) == true);assert(out.event_id == 5);
     
     // free the ring buffer if every thing is okay
-    ring_buffer_free(&rb);
+    ring_buffer_free(rb);
 
     printf("Telemetry :: Test case wrap around check and dropout checks are passed. \n");
 

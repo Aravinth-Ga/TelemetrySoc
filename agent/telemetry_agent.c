@@ -16,7 +16,7 @@
 #include <stdatomic.h>
 
 // Maximum number of events to process per wakeup (0 means no limit)
-#define TELEMETRY_AGENT_MAX_DRAIN_PER_WAKEUP 0
+#define TELEMETRY_AGENT_MAX_DRAIN_PER_WAKEUP 50
 
 // Internal structure for the telemetry agent
 struct telemetry_agent
@@ -63,7 +63,7 @@ static void* drain_ring_send_event(telemetry_agent_t* agent)
         }
 
         // Send event
-        const bool ok = agent->transport->send_event(agent->transport->ctx, &event);
+        const bool ok = agent->transport->send_event(agent->transport->context, &event);
 
         if(ok)  // If send succeeded
         {
@@ -231,7 +231,7 @@ void telemetry_agent_stop(telemetry_agent_t* agent)
     // Shutdown transport
     if(agent->transport->shutdown)
     {
-        agent->transport->shutdown(agent->transport->ctx);
+        agent->transport->shutdown(agent->transport->context);
     }
 
     free(agent);

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stddef.h>
-#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdlib.h>
 #include "event.h"
@@ -10,23 +9,11 @@
     extern "C" {
 #endif
 
-
-typedef struct ring_buffer_s{
-    telemetry_event_t* buffer;
-
-    size_t capacity;
-    size_t allocation;
-
-    _Atomic size_t head;
-    _Atomic size_t tail;
-
-    _Atomic uint64_t dropped;
-
-}ring_buffer_t;
+typedef struct ring_buffer_s ring_buffer_t;
 
 
 // global ring buffer functions
-bool ring_buffer_init(ring_buffer_t* rb, size_t capacity);
+bool ring_buffer_init(ring_buffer_t** out_rb, size_t capacity);
 void ring_buffer_free(ring_buffer_t* rb);
 
 // Producer thread : push the event to the ring buffer

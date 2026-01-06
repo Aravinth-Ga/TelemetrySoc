@@ -1,5 +1,5 @@
 # Add telemetry_transport library
-add_library(telemetry_transport INTERFACE)
+add_library(telemetry_transport STATIC transport_adapter.cpp)
 
 # Include directories
 target_include_directories(telemetry_transport

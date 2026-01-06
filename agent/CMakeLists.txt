@@ -14,6 +14,7 @@ target_include_directories(telemetry_agent
 target_link_libraries(telemetry_agent
     PUBLIC
         telemetry_core
+        telemetry_os_linux
         telemetry_os_inlcude
 )
 
