@@ -6,8 +6,8 @@
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/api",
                 "${workspaceFolder}/core",
-                "${workspaceFolder}/ 
-                 "${workspaceFolder}/transport",
+                "${workspaceFolder}/agent",
+               "${workspaceFolder}/transport",
                 "${workspaceFolder}/os/linux",
                 "/usr/include"
             ],
