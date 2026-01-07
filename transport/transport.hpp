@@ -11,7 +11,7 @@
  */
 
 extern "C" {
-    #include "event.h"
+    #include "../core/event.h"
 }
 
 namespace transport {
