@@ -7,7 +7,7 @@
                 "${workspaceFolder}/api",
                 "${workspaceFolder}/core",
                 "${workspaceFolder}/agent",
-               "${workspaceFolder}/transport",
+                "${workspaceFolder}/transport",
                 "${workspaceFolder}/os/linux",
                 "/usr/include"
             ],
@@ -20,5 +20,5 @@
             "intelliSenseMode": "linux-gcc-x64"
         }
     ],
-    "version": 5
+    "version": 4
 }
