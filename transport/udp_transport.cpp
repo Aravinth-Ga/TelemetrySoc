@@ -1,4 +1,6 @@
 #include "udp_transport.hpp"
+#include <sys/socket.h>
+#include <unistd.h>
 
 // Implementation of UDP transport for sending telemetry events.
 
@@ -62,8 +64,27 @@ namespace transport {
     }
 
     // Opens a UDP socket
+    // Creates and configures a UDP socket for sending data
+    // Returns true if successful, false otherwise
     bool UdpTransport::open_udp_socket()
     {
+        // Check if the UDP socket is already open
+        if(socket_fd_ >= 0)
+            return true;
+
+        // Create a new UDP socket
+        socket_fd_ = ::socket(AF_INET, SOCK_DGRAM, 0);
+
+        if(socket_fd_ < 0)
+        {
+            std::perror("udp socket");
+            return false;
+        }
+
+        // Set the send buffer size to 1MB for the burst tolerance
+        int send_buffer = 1 << 20;
+
+        (void)::setsockopt(socket_fd_, SOL_SOCKET, SO_SNDBUF, &send_buffer, sizeof(send_buffer));
 
         return true;
     }
