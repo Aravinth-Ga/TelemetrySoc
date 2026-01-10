@@ -3,7 +3,8 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <string.h>
+
+#include <string>
 #include <cstring>
 #include <cstdio>
 
@@ -42,7 +43,7 @@ namespace transport {
         maximum_datagram_bytes_ = requested;
 
         // Open the UDP socket
-        if(!open_udp_socket)
+        if(open_udp_socket() == true)
             return false;
         
         // Set up the destination endpoint
@@ -99,11 +100,11 @@ namespace transport {
     {
         // 1. check the input is not empty or valid
         if(endpoint == NULL || endpoint[0] != '\0')
-            return false
+            return false;
 
         // 2. Split the host IP address and port number
-        const char* colon = std::strrchr(endpoint,':')
-        if(!colon || colon == endpoint || colon[1]='\0')
+        const char* colon = std::strrchr(endpoint,':');
+        if(colon == NULL || colon == endpoint || colon[1] == '\0')
         {
             // missing colon / missing IP address / port number is missing still : present
             return false;
@@ -114,8 +115,8 @@ namespace transport {
         const char* port_str = colon + 1;
 
         // 4. The host can stay as string but port can not, Hence extract the port and convert into the numeric
-        const char* endp = null;
-        long port_long = std:strtol(port_str, &endp, 10);
+        char* endp = nullptr;
+        long port_long = std::strtol(port_str, &endp, 10);
 
         if(endp == NULL || *endp != '\0' || port_long <= 0 || port_long > 65535)
         {
@@ -143,7 +144,7 @@ namespace transport {
             return false;
         }
 
-        static_assert(sizeof(dst_storage_ >= sizeof(sockaddr_in)), "dst_storage is too small for sockaddr_in");
+        static_assert(sizeof(dst_storage_) >= sizeof(sockaddr_in), "dst_storage is too small for sockaddr_in");
 
         std::memset(dst_storage_, 0, sizeof(dst_storage_));
         std::memcpy(dst_storage_, &dst, sizeof(dst));
