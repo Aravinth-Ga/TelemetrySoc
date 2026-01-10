@@ -44,6 +44,7 @@ namespace transport {
             // preventing undefined behavior during type conversions
             alignas(8) unsigned char dst_storage_[32];
 
+            unsigned dst_len_ = 0;
     };
 
 }

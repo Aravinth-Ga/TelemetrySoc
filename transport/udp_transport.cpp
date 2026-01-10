@@ -95,62 +95,66 @@ namespace transport {
         return true;
     }
 
-    // Sets up the destination address
+    // Sets up the destination address for UDP transmission.
+    // Parses the endpoint string (format: "host:port"), validates it, and stores the address.
+    // Parameters: endpoint - string in format "host:port" (e.g., "192.168.1.1:5000").
+    // Returns: true if successful, false if endpoint is invalid or cannot be parsed.
     bool UdpTransport::configure_destination(const char* endpoint)
     {
-        // 1. check the input is not empty or valid
-        if(endpoint == NULL || endpoint[0] != '\0')
+        // 1. Validate input: endpoint must not be NULL or empty.
+        if(endpoint == NULL || endpoint[0] == '\0')
             return false;
 
-        // 2. Split the host IP address and port number
+        // 2. Find the colon separator between host and port.
         const char* colon = std::strrchr(endpoint,':');
         if(colon == NULL || colon == endpoint || colon[1] == '\0')
         {
-            // missing colon / missing IP address / port number is missing still : present
+            // Invalid format: missing colon, missing IP address, or missing port number.
             return false;
         }
 
-        // 3. extract the host address separately based on the colon 
+        // 3. Extract host address and port string.
         std::string host(endpoint, static_cast<size_t> (colon - endpoint));
         const char* port_str = colon + 1;
 
-        // 4. The host can stay as string but port can not, Hence extract the port and convert into the numeric
+        // 4. Parse port number from string to integer.
         char* endp = nullptr;
         long port_long = std::strtol(port_str, &endp, 10);
 
-        if(endp == NULL || *endp != '\0' || port_long <= 0 || port_long > 65535)
+        if(endp == port_str || *endp != '\0' || port_long <= 0 || port_long > 65535)
         {
-            // 1. end pointer address represent null in the port string
-            // 2. end char not a string termaniation
-            // 3. port number is not valid
+            // Invalid port: parsing failed, non-numeric characters present, or out of valid range (1-65535)
             return false;
         }
 
         const uint16_t port = static_cast<uint16_t> (port_long);
 
-        // 5. check if its a local host
+        // 5. Handle localhost special case.
         if(host == "localhost")
         {
             host = "127.0.0.1";
         }
 
+        // 6. Populate socket address structure.
         sockaddr_in dst{};
         dst.sin_family = AF_INET;
-        dst.sin_port = htons(port);  // host to network short which does the endien conversion if needed autmatically
+        dst.sin_port = htons(port);  // Convert port to network byte order (big-endian)
 
-        // convert human readbal IP format into kernal readable binaries
-        if(::inet_pton(AF_INET, host.c_str(), &dst.sin_addr) != true)
+        // 7. Convert IP address from human-readable format to binary format.
+        if(::inet_pton(AF_INET, host.c_str(), &dst.sin_addr) != 1)
         {
             return false;
         }
 
+        // 8. Store the destination address in internal storage.
         static_assert(sizeof(dst_storage_) >= sizeof(sockaddr_in), "dst_storage is too small for sockaddr_in");
 
         std::memset(dst_storage_, 0, sizeof(dst_storage_));
         std::memcpy(dst_storage_, &dst, sizeof(dst));
-        maximum_datagram_bytes_ = static_cast<unsigned> (sizeof(dst));
 
+        dst_len_ = static_cast<unsigned> (sizeof(dst));
 
+        // 9. Return true on success.
         return true;
     }
 
