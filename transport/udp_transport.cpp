@@ -1,6 +1,11 @@
 #include "udp_transport.hpp"
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 #include <unistd.h>
+#include <string.h>
+#include <cstring>
+#include <cstdio>
 
 // Implementation of UDP transport for sending telemetry events.
 
@@ -92,6 +97,59 @@ namespace transport {
     // Sets up the destination address
     bool UdpTransport::configure_destination(const char* endpoint)
     {
+        // 1. check the input is not empty or valid
+        if(endpoint == NULL || endpoint[0] != '\0')
+            return false
+
+        // 2. Split the host IP address and port number
+        const char* colon = std::strrchr(endpoint,':')
+        if(!colon || colon == endpoint || colon[1]='\0')
+        {
+            // missing colon / missing IP address / port number is missing still : present
+            return false;
+        }
+
+        // 3. extract the host address separately based on the colon 
+        std::string host(endpoint, static_cast<size_t> (colon - endpoint));
+        const char* port_str = colon + 1;
+
+        // 4. The host can stay as string but port can not, Hence extract the port and convert into the numeric
+        const char* endp = null;
+        long port_long = std:strtol(port_str, &endp, 10);
+
+        if(endp == NULL || *endp != '\0' || port_long <= 0 || port_long > 65535)
+        {
+            // 1. end pointer address represent null in the port string
+            // 2. end char not a string termaniation
+            // 3. port number is not valid
+            return false;
+        }
+
+        const uint16_t port = static_cast<uint16_t> (port_long);
+
+        // 5. check if its a local host
+        if(host == "localhost")
+        {
+            host = "127.0.0.1";
+        }
+
+        sockaddr_in dst{};
+        dst.sin_family = AF_INET;
+        dst.sin_port = htons(port);  // host to network short which does the endien conversion if needed autmatically
+
+        // convert human readbal IP format into kernal readable binaries
+        if(::inet_pton(AF_INET, host.c_str(), &dst.sin_addr) != true)
+        {
+            return false;
+        }
+
+        static_assert(sizeof(dst_storage_ >= sizeof(sockaddr_in)), "dst_storage is too small for sockaddr_in");
+
+        std::memset(dst_storage_, 0, sizeof(dst_storage_));
+        std::memcpy(dst_storage_, &dst, sizeof(dst));
+        maximum_datagram_bytes_ = static_cast<unsigned> (sizeof(dst));
+
+
         return true;
     }
 
