@@ -266,13 +266,13 @@ bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, telemetry
         payload_hex = bytes_to_hex_conversion(reinterpret_cast<uint8_t*>(ev.payload), payload_cap);
     }
 
-    int n = std:snprintf(out_buf, out_cap, 
+    int n = std::snprintf(out_buf, out_cap, 
                         "{\"id\":%u,\"level\":%u,\"ts_ns\":%llu,"
                         "\"payload_len\":%u,\"payload_hex\":\"%s\"}\n",
-                        static_cast<unsigned> ev.id,
-                        static_cast<unsigned> ev.level,
-                        static_cast<unsigned long long> ev.timestamp,
-                        static_cast<unsigned> ev.payload_size;
+                        static_cast<unsigned>(ev.event_id),
+                        static_cast<unsigned>(ev.level),
+                        static_cast<unsigned long long> (ev.timestamp),
+                        static_cast<unsigned>(ev.payload_size),
                         payload_hex.c_str());
 
     if(n <= 0)
