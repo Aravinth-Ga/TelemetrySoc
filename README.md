@@ -15,10 +15,10 @@ agent that drains events, and transport adapters to send them out.
 ## Project Layout
 - `core/` event definition, ring buffer, memory pool (stub).
 - `agent/` telemetry agent that drains the ring buffer.
-- `transport/` transport interfaces, adapter, mock transport, UDP transport (WIP).
+- `transport/` transport interfaces, adapter, mock transport, UDP transport.
 - `os/` OS abstraction layer headers and Linux implementations.
 - `api/` public API headers (some stubs).
-- `example/` demo application using the mock transport.
+- `example/` demo application using the UDP transport.
 - `tests/` unit tests for events and ring buffer.
 
 ## Build
@@ -56,11 +56,13 @@ Tests:
 ring_buffer_t* rb = nullptr;
 ring_buffer_init(&rb, 1024);
 
-transport::MockTransport mock(true);
+transport::UdpTransport udp;
 transport::Config cfg{};
-mock.Init(cfg);
+cfg.endpoint = "127.0.0.1:9000";
+cfg.mtu = 900;
+udp.Init(cfg);
 
-transport_c_t c_transport = transport_adapter::make_transport_adapter(mock);
+transport_c_t c_transport = transport_adapter::make_transport_adapter(udp);
 
 telemetry_agent_t* agent = nullptr;
 telemetry_agent_start(&agent, rb, &c_transport);
@@ -75,11 +77,11 @@ ring_buffer_push(rb, &ev);
 telemetry_agent_notify(agent);
 
 telemetry_agent_stop(agent);
-mock.shutdown();
+udp.shutdown();
 ring_buffer_free(rb);
 ```
 
 ## Notes
-- UDP transport in `transport/udp_transport.cpp` is currently a stub.
 - `api/telemetry.hpp` and `api/config.hpp` are placeholders at the moment.
-
+- Memory pool, UART transport, and shared memory transport are not considered
+  for now and will be implemented later.
