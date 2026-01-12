@@ -26,6 +26,17 @@ static constexpr size_t kRecommendedMaxUdpPayload = 1200;
 
 
 /**
+ * @brief Destructor for UDP transport.
+ *
+ * Cleans up resources when the transport is destroyed.
+ */
+UdpTransport::~UdpTransport()
+{
+    shutdown();
+}
+
+
+/**
  * @brief Converts binary data to hexadecimal string format.
  *
  * Takes raw bytes and converts them to a human-readable hexadecimal string.

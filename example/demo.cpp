@@ -3,6 +3,7 @@
 #include "transport_adapter.hpp"
 #include "mock_transport.hpp"
 #include "telemetry_agent.h"
+#include "udp_transport.hpp"
 
 
 int main()
@@ -12,13 +13,22 @@ int main()
     ring_buffer_t* rb = nullptr;
     ring_buffer_init(&rb, 1024);
 
-    // Create the transport C++
-    transport::MockTransport mock(true);
+    // Create the Mock transport C++
+    /*transport::MockTransport mock(true);
     transport::Config Cfg{};
-    mock.Init(Cfg);
+    mock.Init(Cfg);*/
+
+    // Create the transport in C++
+    transport::UdpTransport udp;
+    transport::Config Cfg{};
+    Cfg.endpoint = "127.0.0.1:9000";
+    Cfg.mtu = 900;
+
+    // Initialize the udp
+    udp.Init(Cfg);
 
     // Wrapper for C++ transport to C
-    transport_c_t c_transport = transport_adapter::make_transport_adapter(mock);
+    transport_c_t c_transport = transport_adapter::make_transport_adapter(udp);
 
     // Start the agent
     telemetry_agent_t* agent = nullptr;
@@ -44,7 +54,7 @@ int main()
     // stop the agent
     telemetry_agent_stop(agent);
 
-    mock.shutdown();
+    udp.shutdown();
     ring_buffer_free(rb);
 
     return 0;
