@@ -28,7 +28,7 @@ namespace transport {
             // Sets up the destination address for sending data
             bool configure_destination(const char* endpoint);
             // Converts the telemetry event to JSON format for transmission
-            bool serialize_event_json(char* out_buf, size_t out_cap, telemetry_event_t& event) const;
+            bool serialize_event_json(char* out_buf, size_t out_cap, const telemetry_event_t& event) const;
 
         private:
             // File descriptor for the UDP socket

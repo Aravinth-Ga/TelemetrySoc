@@ -131,7 +131,7 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
     const size_t cap =  (buf_cap > sizeof(msg_buf))? sizeof(msg_buf) : buf_cap;
 
     // Convert event to JSON format
-    if(!serialize_event_json(msg_buf,cap,event))
+    if(!serialize_event_json(msg_buf, cap, event))
         return false;
 
     // Get the length of the JSON string
@@ -143,7 +143,7 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
     // Send the message to the destination
     const ssize_t sent = ::sendto(socket_fd_, 
                                   msg_buf, len, 0, 
-                                  reinterpret_cast<const sockaddr_in*>(dst), 
+                                  reinterpret_cast<const sockaddr*>(dst), 
                                   static_cast<socklen_t> (dst_len_)
                                 );
 
@@ -287,7 +287,7 @@ bool UdpTransport::configure_destination(const char* endpoint)
  * @param ev      Telemetry event to serialize.
  * @return true if serialization succeeds, false if buffer is too small or invalid.
  */
-bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, telemetry_event_t& ev) const
+bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, const telemetry_event_t& ev) const
 {
     // Validate input parameters
     if(out_buf == NULL || out_cap == 0)
@@ -303,7 +303,7 @@ bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, telemetry
     std::string payload_hex;
     if(payload_cap > 0)
     {
-        payload_hex = bytes_to_hex_conversion(reinterpret_cast<uint8_t*>(ev.payload), payload_cap);
+        payload_hex = bytes_to_hex_conversion(reinterpret_cast<const uint8_t*>(ev.payload), payload_cap);
     }
 
     int n = std::snprintf(out_buf, out_cap, 
