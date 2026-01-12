@@ -123,12 +123,21 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
 
 
 /**
- * @brief Shuts down the UDP transport.
+ * @brief Closes the UDP socket and cleans up.
  *
- * Closes the UDP socket and releases any allocated resources.
+ * Closes the socket connection and resets all internal state.
  */
 void UdpTransport::shutdown()
 {
+    // Close socket if it is open
+    if(socket_fd_ >= 0)
+    {
+        ::close(socket_fd_);      // Close the socket connection
+        socket_fd_ = -1;           // Mark socket as invalid
+    }
+
+    ready_ = false;                // Mark transport as not ready
+    dst_len_ = 0;                  // Clear destination address info
 
 }
 
