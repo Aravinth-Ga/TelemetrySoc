@@ -117,8 +117,39 @@ bool UdpTransport::Init(const Config& Cfg)
  */
 bool UdpTransport::sendEvent(const telemetry_event_t& event)
 {
+    // Check if transport is ready and socket is valid
+    if(ready_ == false || socket_fd_ < 0 || dst_len_ == 0)
+        return false;
+    
+    // Use the configured buffer size or minimum 256 bytes
+    const size_t buf_cap = (maximum_datagram_bytes_ < 256) ? 256 : maximum_datagram_bytes_;
 
-    return true;
+    // Create buffer for the message
+    char msg_buf[1300];
+
+    // Calculate actual buffer capacity (use smaller of configured or buffer size)
+    const size_t cap =  (buf_cap > sizeof(msg_buf))? sizeof(msg_buf) : buf_cap;
+
+    // Convert event to JSON format
+    if(!serialize_event_json(msg_buf,cap,event))
+        return false;
+
+    // Get the length of the JSON string
+    const size_t len = std::strlen(msg_buf);
+
+    // Get the destination address pointer
+    const sockaddr_in* dst = reinterpret_cast<const sockaddr_in*>(dst_storage_);
+
+    // Send the message to the destination
+    const ssize_t sent = ::sendto(socket_fd_, 
+                                  msg_buf, len, 0, 
+                                  reinterpret_cast<const sockaddr_in*>(dst), 
+                                  static_cast<socklen_t> (dst_len_)
+                                );
+
+    // Return true if all bytes were sent
+    return (sent == static_cast<size_t>(len));
+
 }
 
 
