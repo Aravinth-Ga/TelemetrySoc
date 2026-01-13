@@ -46,7 +46,7 @@ int create_and_bind_udp_receiver_socket(uint16_t port)
     local_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
     // Bind the socket to the address
-    if(::bind(socket_fd,reinterpret_cast<sockaddr*> &local_address, sizeof(local_address)) < 0)
+    if(::bind(socket_fd, reinterpret_cast<sockaddr*>(&local_address), sizeof(local_address)) < 0)
     {
         std::perror("bind");
         ::close(socket_fd);
