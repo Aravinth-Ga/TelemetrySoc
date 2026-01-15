@@ -4,6 +4,10 @@
 #include "mock_transport.hpp"
 #include "telemetry_agent.h"
 #include "udp_transport.hpp"
+#include "osal_time.h"
+
+#define MAXIMUM_NUM_OF_EVENTS 10u
+
 
 
 int main()
@@ -22,7 +26,7 @@ int main()
     transport::UdpTransport udp;
     transport::Config Cfg{};
     Cfg.endpoint = "127.0.0.1:9000";
-    Cfg.mtu = 900;
+    Cfg.mtu = 512;
 
     // Initialize the udp
     udp.Init(Cfg);
@@ -39,16 +43,21 @@ int main()
         return 1;
     }
 
-    // produce one event 
-    telemetry_event_t ev{};
-    ev.event_id = 1;
-    ev.level = 2;
-    ev.payload_size = 0;
-    ev.timestamp = 123;
-
-    if(ring_buffer_push(rb, &ev) == true)
+    // push some events to test
+    for(int i = 0;i<MAXIMUM_NUM_OF_EVENTS;i++)
     {
-        telemetry_agent_notify(agent);
+        // produce one event 
+        telemetry_event_t ev{};
+        ev.event_id = 1;
+        ev.level = 2;
+        ev.payload_size = 0;
+        ev.timestamp = osal_telemetry_now_monotonic_ns();
+
+        if(ring_buffer_push(rb, &ev) == true)
+        {
+            std::fprintf(stderr, "UdpTransport sendEvent called\n");
+            telemetry_agent_notify(agent);
+        }
     }
 
     // stop the agent
