@@ -60,10 +60,10 @@ static std::string bytes_to_hex_conversion(const uint8_t* data, uint32_t length)
         unsigned value = data[i];
 
         // Extract the high 4 bits (most significant) and convert to hex.
-        hex_string.push_back(strHex[value >> 4] & 0x0F);
+        hex_string.push_back(strHex[value >> 4]);
 
         // Extract the low 4 bits (least significant) and convert to hex.
-        hex_string.push_back(strHex[value] & 0x0F);
+        hex_string.push_back(strHex[value & 0x0F]);
     }
 
     return hex_string;
@@ -103,7 +103,7 @@ bool UdpTransport::Init(const Config& Cfg)
     maximum_datagram_bytes_ = requested;
 
     // Open and configure the UDP socket
-    if(open_udp_socket() == true)
+    if(open_udp_socket() == false)
         return false;
     
     // Configure the destination address from the endpoint string
@@ -157,6 +157,10 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
                                   reinterpret_cast<const sockaddr*>(dst), 
                                   static_cast<socklen_t> (dst_len_)
                                 );
+
+    // Debug code
+    if (sent < 0) 
+        std::perror("sendto");
 
     // Return true if all bytes were sent
     return (sent == static_cast<size_t>(len));
@@ -331,7 +335,7 @@ bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, const tel
         return false;
     }
 
-    if(static_cast<size_t>(n) <= out_cap)
+    if(static_cast<size_t>(n) >= out_cap)
         return false;
 
     return true;

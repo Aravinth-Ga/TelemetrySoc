@@ -56,7 +56,7 @@ static void* drain_ring_send_event(telemetry_agent_t* agent)
         telemetry_event_t event;  // Space for event
 
         // Get event from buffer (no wait if empty)
-        if(ring_buffer_pop(agent->ring_buff_handle, &event))
+        if(!ring_buffer_pop(agent->ring_buff_handle, &event))
         {
             // Buffer empty, done
             return NULL;
