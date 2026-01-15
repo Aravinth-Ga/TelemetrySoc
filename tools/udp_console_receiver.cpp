@@ -71,6 +71,39 @@ int create_and_bind_udp_receiver_socket(uint16_t port)
  */
 int main(int arg_count, char** arg_vector)
 {
+    uint16_t port = kListenPort;
+
+
+    // Optinal : Allow port override
+    if(arg_count == 2)
+    {
+        const long port_loc = std::strtol(arg_vector[1], nullptr, 10); // 10 - Decimal, 16 - Hex, 02 - Binary
+        if(port_loc > 0 && port_loc < 65535)
+        {
+            port = static_cast<uint16_t>(port_loc);
+        }
+    }
+
+    // Create the UDP Receiver
+    const int receiver_fd = create_and_bind_udp_receiver_socket(port);
+
+    // Chekc if the UDP receiver is started successfully
+    if(receiver_fd < 0)
+    {
+        std::fprintf(stderr,"Failed to start the UDP receiver : %u \n", port);
+        return 1;
+    }
+
+    std::fprintf("UDP console receiver started listening on 0.0.0.0: %u\n", port);
+    std::fprintf("Press Ctrl + C to stop. \n\n");
+
+    while(1)
+    {
+        // Infinite receiver loop
+    }
+
+    ::close(receiver_fd);
+
     return 0;
 }
 
