@@ -6,18 +6,19 @@ agent that drains events, and transport adapters to send them out.
 
 ## Features
 - Fixed-size telemetry events with payload, level, and monotonic timestamp.
-- Thread-safe ring buffer for producer/consumer usage.
+- Thread-safe ring buffer for producer/consumer usage with drop tracking.
 - Telemetry agent that drains the ring buffer in a background thread.
-- C/C++ transport interface with a C adapter for C++ transports.
+- C++ transport interface with a C adapter; mock and UDP transports included.
+- UDP transport sends JSON events to a configured endpoint.
 - OS abstraction layer (Linux implementations included).
-- Example app and basic unit tests.
+- Example app that sends events over UDP; unit tests for core components.
 
 ## Project Layout
-- `core/` event definition, ring buffer, memory pool (stub).
+- `core/` event definition, ring buffer, memory pool (placeholder).
 - `agent/` telemetry agent that drains the ring buffer.
 - `transport/` transport interfaces, adapter, mock transport, UDP transport.
 - `os/` OS abstraction layer headers and Linux implementations.
-- `api/` public API headers (some stubs).
+- `api/` public API headers (C++ headers are placeholders).
 - `example/` demo application using the UDP transport.
 - `tests/` unit tests for events and ring buffer.
 
@@ -51,6 +52,40 @@ Tests:
 ./build/tests/test_telemetry_framework
 ```
 
+## Quick Terminal Smoke Test (UDP)
+1) Build:
+```bash
+cmake -S . -B build
+cmake --build build
+```
+
+2) Start a UDP listener (pick one):
+```bash
+nc -u -l 9000
+```
+```bash
+socat -u UDP-RECV:9000 STDOUT
+```
+
+3) Run the example in another terminal:
+```bash
+./build/example/telemetry_example
+```
+
+You should see JSON-formatted events printed by the UDP listener.
+
+## Run Only Prebuilt Executables
+If you already compiled the binaries, you can just run them directly:
+```bash
+./build/example/telemetry_example
+```
+
+For the UDP console receiver, start your receiver binary first, then run the example:
+```bash
+./path/to/udp_console_receiver
+./build/example/telemetry_example
+```
+
 ## Usage Sketch
 ```cpp
 ring_buffer_t* rb = nullptr;
@@ -59,7 +94,7 @@ ring_buffer_init(&rb, 1024);
 transport::UdpTransport udp;
 transport::Config cfg{};
 cfg.endpoint = "127.0.0.1:9000";
-cfg.mtu = 900;
+cfg.mtu = 512;
 udp.Init(cfg);
 
 transport_c_t c_transport = transport_adapter::make_transport_adapter(udp);
@@ -71,7 +106,7 @@ telemetry_event_t ev{};
 ev.event_id = 1;
 ev.level = TELEMETRY_LEVEL_INFO;
 ev.payload_size = 0;
-ev.timestamp = 123;
+ev.timestamp = osal_telemetry_now_monotonic_ns();
 
 ring_buffer_push(rb, &ev);
 telemetry_agent_notify(agent);
@@ -81,7 +116,9 @@ udp.shutdown();
 ring_buffer_free(rb);
 ```
 
-## Notes
-- `api/telemetry.hpp` and `api/config.hpp` are placeholders at the moment.
-- Memory pool, UART transport, and shared memory transport are not considered
-  for now and will be implemented later.
+## Current Status
+- UDP transport is implemented with JSON serialization and basic socket setup.
+- Example uses UDP; mock transport remains available for tests.
+- `api/telemetry.hpp`, `api/config.hpp`, and `api/telemetry.cpp` are placeholders.
+- Memory pool files in `core/` are empty placeholders.
+- Tests currently cover events and the ring buffer only.
