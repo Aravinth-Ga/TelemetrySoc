@@ -84,7 +84,7 @@ int main(int arg_count, char** arg_vector)
         }
     }
 
-    // Create the UDP Receiver
+    // Create the UDP Socket and bind it to the 0.0.0.0:<port>
     const int receiver_fd = create_and_bind_udp_receiver_socket(port);
 
     // Chekc if the UDP receiver is started successfully
@@ -100,6 +100,22 @@ int main(int arg_count, char** arg_vector)
     while(1)
     {
         // Infinite receiver loop
+        char datagram_msg[kMaxDatagrambytes];
+
+        sockaddr_in sender{};
+        socklen_t sender_len = sizeof(sender);
+
+        const ssize_t bytes = ::recvfrom(receiver_fd, datagram_msg, sizeof(datagram_msg)-1, 0, static_cast<sockaddr*>(&sender), &sender_len);
+
+        if( bytes < 0)
+        {
+            std::perror("recvfrom");
+            // continue receive 
+            continue; 
+        }
+
+        datagram_msg[bytes] = '\0';
+
     }
 
     ::close(receiver_fd);
