@@ -14,7 +14,7 @@
 
 // Struct declaration
 
-typedef struct ring_buffer_s{
+typedef struct ring_buffer_s {
     telemetry_event_t* buffer;
 
     size_t capacity;
@@ -24,7 +24,7 @@ typedef struct ring_buffer_s{
     atomic_size_t tail;
 
     atomic_uint_fast64_t dropped;
-};
+} ring_buffer_t;
 
 // Local function definitions
 

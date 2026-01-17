@@ -3,6 +3,7 @@ add_library(telemetry_core
     ring_buffer.c
     memory_pool.c
     event.c
+    telemetry_protocol.c
 )
 
 # Include directories
