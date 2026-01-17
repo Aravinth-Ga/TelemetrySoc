@@ -42,22 +42,22 @@ UdpTransport::~UdpTransport()
  * Takes raw bytes and converts them to a human-readable hexadecimal string.
  * For example, byte value 255 becomes "ff".
  *
- * @param data   Pointer to the binary data to convert.
- * @param length Number of bytes to convert.
+ * @param data_bytes Pointer to the binary data to convert.
+ * @param byte_count Number of bytes to convert.
  * @return Hexadecimal string representation of the data.
  */
-static std::string bytes_to_hex_conversion(const uint8_t* data, uint32_t length)
+static std::string bytes_to_hex_conversion(const uint8_t* data_bytes, uint32_t byte_count)
 {
     std::string hex_string;
 
     static const char* strHex = "0123456789abcdef";
 
     // Each byte becomes 2 hex characters, so reserve twice the memory.
-    hex_string.reserve(static_cast<size_t> (length) * 2);
+    hex_string.reserve(static_cast<size_t> (byte_count) * 2);
 
-    for(int i=0; i<length; i++)
+    for(int i=0; i<byte_count; i++)
     {
-        unsigned value = data[i];
+        unsigned value = data_bytes[i];
 
         // Extract the high 4 bits (most significant) and convert to hex.
         hex_string.push_back(strHex[value >> 4]);
@@ -76,17 +76,17 @@ static std::string bytes_to_hex_conversion(const uint8_t* data, uint32_t length)
  * Sets up the UDP transport by validating the endpoint, configuring the MTU size,
  * opening a UDP socket, and setting the destination address.
  *
- * @param Cfg Configuration structure containing endpoint and MTU settings.
+ * @param config Configuration structure containing endpoint and MTU settings.
  * @return true if initialization succeeds, false if endpoint is invalid or setup fails.
  */
-bool UdpTransport::Init(const Config& Cfg)
+bool UdpTransport::Init(const Config& config)
 {
     // Check if the endpoint address is valid and not NULL
-    if(Cfg.endpoint == NULL)
+    if(config.endpoint == NULL)
         return false;
 
     // Get the requested maximum transmission unit (MTU) size
-    size_t requested = static_cast<size_t> (Cfg.mtu);
+    size_t requested = static_cast<size_t> (config.mtu);
 
     // Use default 512 bytes if MTU is not configured (value is 0)
     if(requested == 0)
@@ -107,7 +107,7 @@ bool UdpTransport::Init(const Config& Cfg)
         return false;
     
     // Configure the destination address from the endpoint string
-    if(!configure_destination(Cfg.endpoint))
+    if(!configure_destination(config.endpoint))
         return false;
 
     // Mark transport as ready for sending
@@ -133,16 +133,16 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
         return false;
     
     // Use the configured buffer size or minimum 256 bytes
-    const size_t buf_cap = (maximum_datagram_bytes_ < 256) ? 256 : maximum_datagram_bytes_;
+    const size_t buf_capacity = (maximum_datagram_bytes_ < 256) ? 256 : maximum_datagram_bytes_;
 
     // Create buffer for the message
     char msg_buf[1300];
 
     // Calculate actual buffer capacity (use smaller of configured or buffer size)
-    const size_t cap =  (buf_cap > sizeof(msg_buf))? sizeof(msg_buf) : buf_cap;
+    const size_t acutal_capacity =  (buf_capacity > sizeof(msg_buf))? sizeof(msg_buf) : buf_capacity;
 
     // Convert event to JSON format
-    if(!serialize_event_json(msg_buf, cap, event))
+    if(!serialize_event_json(msg_buf, acutal_capacity, event))
         return false;
 
     // Get the length of the JSON string
@@ -226,26 +226,26 @@ bool UdpTransport::open_udp_socket()
  * Parses the endpoint string (format: "host:port"), validates the IP address
  * and port number, and stores the destination address internally.
  *
- * @param endpoint String containing destination address in format "host:port"
- *                 (e.g., "192.168.1.1:5000" or "localhost:8080").
+ * @param endpoint_string String containing destination address in format "host:port"
+ *                        (e.g., "192.168.1.1:5000" or "localhost:8080").
  * @return true if endpoint is valid and configured successfully, false otherwise.
  */
-bool UdpTransport::configure_destination(const char* endpoint)
+bool UdpTransport::configure_destination(const char* endpoint_string)
 {
     // Validate input: endpoint must not be NULL or empty
-    if(endpoint == NULL || endpoint[0] == '\0')
+    if(endpoint_string == NULL || endpoint_string[0] == '\0')
         return false;
 
     // Find the colon separator between host and port
-    const char* colon = std::strrchr(endpoint,':');
-    if(colon == NULL || colon == endpoint || colon[1] == '\0')
+    const char* colon = std::strrchr(endpoint_string,':');
+    if(colon == NULL || colon == endpoint_string || colon[1] == '\0')
     {
         // Invalid format: missing colon, no IP address, or no port number
         return false;
     }
 
     // Extract host address and port string from endpoint
-    std::string host(endpoint, static_cast<size_t> (colon - endpoint));
+    std::string host(endpoint_string, static_cast<size_t> (colon - endpoint_string));
     const char* port_str = colon + 1;
 
     // Parse port number from string to integer
@@ -297,37 +297,37 @@ bool UdpTransport::configure_destination(const char* endpoint)
  * severity level, timestamp, payload size, and hexadecimal payload data.
  * Limits payload to 128 bytes for network efficiency.
  *
- * @param out_buf Output buffer to store the JSON string.
- * @param out_cap Maximum capacity of the output buffer in bytes.
- * @param ev      Telemetry event to serialize.
+ * @param output_buffer Output buffer to store the JSON string.
+ * @param buffer_capacity Maximum capacity of the output buffer in bytes.
+ * @param event Telemetry event to serialize.
  * @return true if serialization succeeds, false if buffer is too small or invalid.
  */
-bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, const telemetry_event_t& ev) const
+bool UdpTransport::serialize_event_json(char* output_buffer, size_t buffer_capacity, const telemetry_event_t& event) const
 {
     // Validate input parameters
-    if(out_buf == NULL || out_cap == 0)
+    if(output_buffer == NULL || buffer_capacity == 0)
         return false;
 
-    uint32_t payload_len = static_cast<uint32_t> (ev.payload_size);
-    uint32_t payload_cap = payload_len;
+    uint32_t payload_len = static_cast<uint32_t> (event.payload_size);
+    uint32_t payload_capacity = payload_len;
 
     // Limit the payload to 128 bytes for efficiency
-    if(payload_cap > 128)
-        payload_cap = 128u;
+    if(payload_capacity > 128)
+        payload_capacity = 128u;
 
     std::string payload_hex;
-    if(payload_cap > 0)
+    if(payload_capacity > 0)
     {
-        payload_hex = bytes_to_hex_conversion(reinterpret_cast<const uint8_t*>(ev.payload), payload_cap);
+        payload_hex = bytes_to_hex_conversion(reinterpret_cast<const uint8_t*>(event.payload), payload_capacity);
     }
 
-    int n = std::snprintf(out_buf, out_cap, 
+    int n = std::snprintf(output_buffer, buffer_capacity, 
                         "{\"id\":%u,\"level\":%u,\"ts_ns\":%llu,"
                         "\"payload_len\":%u,\"payload_hex\":\"%s\"}\n",
-                        static_cast<unsigned>(ev.event_id),
-                        static_cast<unsigned>(ev.level),
-                        static_cast<unsigned long long> (ev.timestamp),
-                        static_cast<unsigned>(ev.payload_size),
+                        static_cast<unsigned>(event.event_id),
+                        static_cast<unsigned>(event.level),
+                        static_cast<unsigned long long> (event.timestamp),
+                        static_cast<unsigned>(event.payload_size),
                         payload_hex.c_str());
 
     if(n <= 0)
@@ -335,7 +335,7 @@ bool UdpTransport::serialize_event_json(char* out_buf, size_t out_cap, const tel
         return false;
     }
 
-    if(static_cast<size_t>(n) >= out_cap)
+    if(static_cast<size_t>(n) >= buffer_capacity)
         return false;
 
     return true;

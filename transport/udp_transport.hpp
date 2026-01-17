@@ -16,7 +16,7 @@ namespace transport {
             ~UdpTransport() override;
 
             // Initializes the UDP transport with the given configuration
-            bool Init(const Config& cfg) override;
+            bool Init(const Config& config) override;
             // Sends a telemetry event over UDP
             bool sendEvent(const telemetry_event_t& event) override;
             // Shuts down the UDP transport and cleans up resources
@@ -26,9 +26,9 @@ namespace transport {
             // Opens a UDP socket for communication
             bool open_udp_socket();
             // Sets up the destination address for sending data
-            bool configure_destination(const char* endpoint);
+            bool configure_destination(const char* endpoint_string);
             // Converts the telemetry event to JSON format for transmission
-            bool serialize_event_json(char* out_buf, size_t out_cap, const telemetry_event_t& event) const;
+            bool serialize_event_json(char* output_buffer, size_t buffer_capacity, const telemetry_event_t& event) const;
 
         private:
             // File descriptor for the UDP socket
