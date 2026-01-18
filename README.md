@@ -3,23 +3,25 @@
 Telemetry4SoC is a lightweight telemetry framework written in C/C++ for System-on-Chip (SoC) projects. It provides a lock-free ring buffer to store events, a background service to process events, and transport adapters to send data to different destinations.
 
 ## Features
-- **Fixed-size events**: Each event includes a payload, priority level, and timestamp.
-- **Thread-safe buffer**: A ring buffer that multiple threads can use safely; tracks dropped events.
+- **Fixed-size events**: Each event includes a payload, severity level, and timestamp.
+- **SPSC ring buffer**: Single-producer/single-consumer ring buffer with atomics; tracks dropped events.
 - **Background service**: Automatically processes events in a separate thread.
 - **Transport options**: Easy-to-use interface for sending data over UDP, mock transport, or custom transports.
 - **UDP support**: Sends events as JSON to a specified address and port.
+- **Wire protocol helpers**: Binary telemetry header encode/decode utilities (v1).
 - **OS abstraction**: Works with different operating systems (Linux implementations included).
 - **Example program**: Demonstrates how to use the framework.
 - **Unit tests**: Includes tests for core components.
 
 ## Project Organization
-- `core/` - Event structure, ring buffer, and memory utilities.
+- `core/` - Event structure, ring buffer, memory utilities, and telemetry wire protocol helpers.
 - `agent/` - Background service that processes events from the ring buffer.
 - `transport/` - Different ways to send events (interfaces and implementations).
 - `os/` - Operating system abstraction layer; includes Linux support.
 - `api/` - Public interfaces for using the framework (currently includes placeholder headers).
 - `example/` - Sample application showing how to use the framework.
 - `tests/` - Automated tests for the core components.
+- `tools/` - Small utilities like the UDP console receiver.
 
 ## Build
 **Requirements**: CMake 3.10 or later, C11/C++17 support, pthread library (Linux).
@@ -88,7 +90,7 @@ If you have already built the project, you can run the programs directly:
 
 **Run with UDP receiver**:
 ```bash
-./path/to/udp_console_receiver
+./build/tools/udp_console_receiver
 ./build/example/telemetry_example
 ```
 
@@ -135,8 +137,10 @@ ring_buffer_free(rb);
 
 ## Current Status
 - ✅ **UDP transport**: Fully implemented with JSON event formatting and socket communication.
+- ✅ **Wire protocol helpers**: Binary header encode/decode helpers are implemented in `core/telemetry_protocol.*`.
 - ✅ **Example program**: Works with UDP transport to demonstrate the framework.
 - ✅ **Mock transport**: Available for testing without sending data over the network.
 - 📋 **API headers**: `api/telemetry.hpp`, `api/config.hpp`, and `api/telemetry.cpp` are placeholders for future development.
 - 📋 **Memory pool**: Files in `core/` are placeholder implementations.
+- 📋 **Other transports**: `transport/shm.hpp` and `transport/uart.hpp` are placeholders.
 - ✅ **Tests**: Currently cover events and ring buffer functionality.
