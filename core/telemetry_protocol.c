@@ -11,8 +11,6 @@
 
 #include "telemetry_protocol.h"
 
-/** Fixed size of telemetry header v1 in bytes */
-#define HEADER_V1_SIZE 32
 
 /**
  * @brief Convert unsigned 16-bit integer to big-endian format.
@@ -51,6 +49,15 @@ static inline uint32_t to_be_u32(uint32_t value)
  */
 static inline uint64_t to_be_u64(uint64_t value)
 {
+    value = (((value & 0x00000000000000FFULL) << 56) |
+             ((value & 0x000000000000FF00ULL) << 40) |
+             ((value & 0x0000000000FF0000ULL) << 24) |
+             ((value & 0x00000000FF000000ULL) << 8)  |
+             ((value & 0x000000FF00000000ULL) >> 8)  |
+             ((value & 0x0000FF0000000000ULL) >> 24) |
+             ((value & 0x00FF000000000000ULL) >> 40) |
+             ((value & 0xFF00000000000000ULL) >> 56) 
+            );
     return value;
 }
 
@@ -188,7 +195,22 @@ static inline uint64_t get_u64_be(const uint8_t* buffer)
     return value;
 }
 
-/**
+// Offsets enum for telemetry header fields
+typedef enum telemetry_header_v1_offsets_e {
+    OFFSET_MAGIC_VALUE          = 0,
+    OFFSET_PROTOCOL_VERSION     = 4,
+    OFFSET_HEADER_LENGTH        = 5,
+    OFFSET_MESSAGE_TYPE         = 6,
+    OFFSET_SEQUENCE_NUMBER      = 8,
+    OFFSET_TIMESTAMP            = 12,
+    OFFSET_PAYLOAD_LENGTH       = 20,
+    OFFSET_CRC32                = 24,
+    OFFSET_RESERVED             = 28,
+    HEADER_V1_SIZE              = 32
+} telemetry_header_v1_offsets_t;
+
+
+/**     
  * @brief Encode a telemetry header to binary format (v1).
  *
  * Serializes the header structure into big-endian binary format suitable for transmission
@@ -201,30 +223,82 @@ static inline uint64_t get_u64_be(const uint8_t* buffer)
  *
  * @note Requires buffer_capacity >= HEADER_V1_SIZE (32 bytes)
  */
+
 size_t telemetry_encode_header_v1(uint8_t* encoded_buffer, size_t buffer_capacity, const telemetry_header_t* header)
 {
-    /* Validate input parameters */
+    // Validate input parameters
     if (encoded_buffer == NULL || header == NULL)
         return 0;
     
-    /* Verify output buffer has sufficient capacity */
+    // Verify output buffer has sufficient capacity 
     if (buffer_capacity < HEADER_V1_SIZE)
         return 0;
     
-    /* Validate magic value for protocol identification */
+    // Validate magic value for protocol identification 
     if (header->magic_value != TELEMETRY_PROTOCOL_MAGIC_VALUE)
         return 0;
     
-    /* Validate protocol version */
+    // Validate protocol version
     if (header->protocol_version != TELEMETRY_PROTOCOL_VERSION_V1)
         return 0;
     
-    /* Validate header length field */
+    // Validate header length field
     if (header->header_length != TELEMETRY_HEADER_LEN)
         return 0;
     
-    // TODO :: Encode the header fields into big-endian format
-
-
+    // Encode the header fields into big-endian format
+    put_32_be(&encoded_buffer[OFFSET_MAGIC_VALUE], header->magic_value);
+    put_u8(&encoded_buffer[OFFSET_PROTOCOL_VERSION], header->protocol_version);
+    put_u8(&encoded_buffer[OFFSET_HEADER_LENGTH], header->header_length);
+    put_u16_be(&encoded_buffer[OFFSET_MESSAGE_TYPE], header->message_type);
+    put_32_be(&encoded_buffer[OFFSET_SEQUENCE_NUMBER], header->sequence_counter);
+    put_64_be(&encoded_buffer[OFFSET_TIMESTAMP], header->timestamp_monotonic_ns);
+    put_32_be(&encoded_buffer[OFFSET_PAYLOAD_LENGTH], header->payload_len);
+    put_32_be(&encoded_buffer[OFFSET_CRC32]); // CRC32 will be computed later, set to 0 for now
+    put_32_be(&encoded_buffer[OFFSET_RESERVED], header->reserved);
+        
     return HEADER_V1_SIZE;
+}
+
+int telemetry_decode_header_v1(telemetry_header_t* decoded_header, const uint8_t* buffer, size_t buffer_length)
+{
+    // Validate input parameters
+    if (decoded_header == NULL || buffer == NULL)
+        return TELEM_RC_ERR_PARM;
+    
+    // Verify input buffer has sufficient length
+    if (buffer_length < HEADER_V1_SIZE)
+        return TELEM_RC_ERR_TRUNC;
+    
+    // Decode the header fields from big-endian format
+    decoded_header->magic_value           = get_u32_be(&buffer[OFFSET_MAGIC_VALUE]);
+    decoded_header->protocol_version      = get_u8(&buffer[OFFSET_PROTOCOL_VERSION]);
+    decoded_header->header_length         = get_u8(&buffer[OFFSET_HEADER_LENGTH]);
+    decoded_header->message_type          = get_u16_be(&buffer[OFFSET_MESSAGE_TYPE]);
+    decoded_header->sequence_counter      = get_u32_be(&buffer[OFFSET_SEQUENCE_NUMBER]);
+    decoded_header->timestamp_monotonic_ns= get_u64_be(&buffer[OFFSET_TIMESTAMP]);
+    decoded_header->payload_len           = get_u32_be(&buffer[OFFSET_PAYLOAD_LENGTH]);
+    decoded_header->crc32                 = get_u32_be(&buffer[OFFSET_CRC32]);
+    decoded_header->reserved              = get_u32_be(&buffer[OFFSET_RESERVED]);
+    
+    // Validate magic value for protocol identification 
+    if (decoded_header->magic_value != TELEMETRY_PROTOCOL_MAGIC_VALUE)
+        return TELEM_RC_ERR_MAGIC;
+    
+    // Validate protocol version
+    if (decoded_header->protocol_version != TELEMETRY_PROTOCOL_VERSION_V1)
+        return TELEM_RC_ERR_VERSION;
+    
+    // Validate header length field
+    if (decoded_header->header_length != TELEMETRY_HEADER_LEN)
+        return TELEM_RC_ERR_HEADER_LEN;
+
+    // Range checks: payload length should not exceed maximum allowed
+    if(decoded_header->payload_len > (buffer_length)- sizeof(decoded_header->header_length))
+        return TELEM_RC_ERR_RANGE;
+    
+    if(decoded_header.header_length != HEADER_V1_SIZE)
+        return TELEM_RC_ERR_HEADER_LEN;
+        
+    return TELEM_RC_OK;
 }
