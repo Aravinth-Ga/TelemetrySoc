@@ -254,7 +254,7 @@ size_t telemetry_encode_header_v1(uint8_t* encoded_buffer, size_t buffer_capacit
     put_32_be(&encoded_buffer[OFFSET_SEQUENCE_NUMBER], header->sequence_counter);
     put_64_be(&encoded_buffer[OFFSET_TIMESTAMP], header->timestamp_monotonic_ns);
     put_32_be(&encoded_buffer[OFFSET_PAYLOAD_LENGTH], header->payload_len);
-    put_32_be(&encoded_buffer[OFFSET_CRC32]); // CRC32 will be computed later, set to 0 for now
+    put_32_be(&encoded_buffer[OFFSET_CRC32],header->crc32); // CRC32 will be computed later, set to 0 for now
     put_32_be(&encoded_buffer[OFFSET_RESERVED], header->reserved);
         
     return HEADER_V1_SIZE;
@@ -297,7 +297,7 @@ int telemetry_decode_header_v1(telemetry_header_t* decoded_header, const uint8_t
     if(decoded_header->payload_len > (buffer_length)- sizeof(decoded_header->header_length))
         return TELEM_RC_ERR_RANGE;
     
-    if(decoded_header.header_length != HEADER_V1_SIZE)
+    if(decoded_header->header_length != HEADER_V1_SIZE)
         return TELEM_RC_ERR_HEADER_LEN;
         
     return TELEM_RC_OK;

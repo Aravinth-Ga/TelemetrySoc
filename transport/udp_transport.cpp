@@ -17,6 +17,7 @@
 #include <string>
 #include <cstring>
 #include <cstdio>
+#include "../os/include/osal_time.h"
 
 namespace transport {
 
@@ -137,6 +138,8 @@ bool UdpTransport::sendEvent(const telemetry_event_t& event)
 
     // Create buffer for the message
     char msg_buf[1300];
+
+    // TODO :: Update the header along with the JSON Binary
 
     // Calculate actual buffer capacity (use smaller of configured or buffer size)
     const size_t acutal_capacity =  (buf_capacity > sizeof(msg_buf))? sizeof(msg_buf) : buf_capacity;
