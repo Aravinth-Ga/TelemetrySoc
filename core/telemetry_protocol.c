@@ -177,14 +177,14 @@ static inline uint64_t get_u64_be(const uint8_t* buffer)
 {
     uint64_t value = 0;
 
-    value  = (uint64_t)(buffer[0] >> 56);
-    value |= (uint64_t)(buffer[1] >> 48); 
-    value |= (uint64_t)(buffer[2] >> 40); 
-    value |= (uint64_t)(buffer[3] >> 32); 
-    value |= (uint64_t)(buffer[4] >> 24); 
-    value |= (uint64_t)(buffer[5] >> 16); 
-    value |= (uint64_t)(buffer[6] >> 8); 
-    value |= (uint64_t)(buffer[7]); 
+    value  = ((uint64_t)buffer[0] << 56);
+    value |= ((uint64_t)buffer[1] << 48); 
+    value |= ((uint64_t)buffer[2] << 40); 
+    value |= ((uint64_t)buffer[3] << 32); 
+    value |= ((uint64_t)buffer[4] << 24); 
+    value |= ((uint64_t)buffer[5] << 16); 
+    value |= ((uint64_t)buffer[6] << 8); 
+    value |= ((uint64_t)buffer[7]); 
     return value;
 }
 

@@ -15,6 +15,10 @@
 
 #pragma once
 
+#include <stddef.h>
+#include "../api/type.h"
+
+
 #ifdef __cplusplus
     extern "C" {
 #endif
@@ -113,14 +117,6 @@ int telemetry_decode_header_v1(telemetry_header_t* decoded_header, const uint8_t
 
 
 
-/**
- * @brief Get the fixed header length for telemetry protocol v1.
- *
- * Returns the fixed size of a telemetry header in bytes. This is a compile-time
- * constant but wrapped in a function for API consistency and type safety.
- *
- * @return Size of telemetry header v1 in bytes (always 32 bytes)
- */
 /**
  * @brief Get the fixed header length for telemetry protocol v1.
  *
