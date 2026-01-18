@@ -20,9 +20,9 @@
 #endif
 
 
-#define TELEMETRY_PRTOCOL_VERSION_V1                (uint8_t)1u
-#define TELEMETRY_HEADER_LEN                        (uint8_t)32u
-#define TELEMETRY_MAGIC_VALUE                       (uint32_t)0x54454C31u  // ASCII coded : TEL1
+#define TELEMETRY_PROTOCOL_VERSION_V1                (uint8_t)1u
+#define TELEMETRY_HEADER_LEN                         (uint8_t)32u
+#define TELEMETRY_PROTOCOL_MAGIC_VALUE               (uint32_t)0x54454C31u  // ASCII coded : TEL1
 
 /**
  * @struct telemetry_header_s
@@ -121,8 +121,16 @@ int telemetry_decode_header_v1(telemetry_header_t* decoded_header, const uint8_t
  *
  * @return Size of telemetry header v1 in bytes (always 32 bytes)
  */
+/**
+ * @brief Get the fixed header length for telemetry protocol v1.
+ *
+ * Returns the fixed size of a telemetry header in bytes. This is a compile-time
+ * constant but wrapped in a function for API consistency and type safety.
+ *
+ * @return Size of telemetry header v1 in bytes (always 32 bytes)
+ */
 static inline size_t telemetry_header_v1_length(void) {
-    return size_t(TELEMETRY_HEADER_LEN);
+    return (size_t)(TELEMETRY_HEADER_LEN);
 }
 
 #ifdef __cplusplus
