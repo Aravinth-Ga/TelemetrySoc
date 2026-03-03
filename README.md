@@ -136,11 +136,11 @@ ring_buffer_free(rb);
 ```
 
 ## Current Status
-- ✅ **UDP transport**: Fully implemented with JSON event formatting and socket communication.
-- ✅ **Wire protocol helpers**: Binary header encode/decode helpers are implemented in `core/telemetry_protocol.*`.
-- ✅ **Example program**: Works with UDP transport to demonstrate the framework.
-- ✅ **Mock transport**: Available for testing without sending data over the network.
-- 📋 **API headers**: `api/telemetry.hpp`, `api/config.hpp`, and `api/telemetry.cpp` are placeholders for future development.
-- 📋 **Memory pool**: Files in `core/` are placeholder implementations.
-- 📋 **Other transports**: `transport/shm.hpp` and `transport/uart.hpp` are placeholders.
-- ✅ **Tests**: Currently cover events and ring buffer functionality.
+-  **UDP transport**: Fully implemented with JSON event formatting and socket communication.
+-  **Wire protocol helpers**: Binary header encode/decode helpers are implemented in `core/telemetry_protocol.*`.
+-  **Example program**: Works with UDP transport to demonstrate the framework.
+-  **Mock transport**: Available for testing without sending data over the network.
+-  **API headers**: `api/telemetry.hpp`, `api/config.hpp`, and `api/telemetry.cpp` are placeholders for future development.
+-  **Memory pool**: Files in `core/` are placeholder implementations.
+-  **Other transports**: `transport/shm.hpp` and `transport/uart.hpp` are placeholders.
+-  **Tests**: Currently cover events and ring buffer functionality.
